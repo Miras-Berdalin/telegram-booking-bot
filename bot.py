@@ -203,30 +203,82 @@ async def handle_steps(message: Message):
         year = state["year"]
         month = state["month"]
         day = state["day"]
+        persons = state["persons"]
+        event = state["event"]
+        phone = message.text
 
-        bookings[(year, month, day)] = {
-            "user_id": user_id,
-            "persons": state["persons"],
-            "event": state["event"],
-            "phone": message.text
-        }
+        # 🔥 создаём кнопки подтверждения
+        approve_keyboard = InlineKeyboardMarkup(inline_keyboard=[
+            [
+                InlineKeyboardButton(
+                    text="✅ Подтвердить",
+                    callback_data=f"approve_{day}_{month}_{year}_{message.from_user.id}"
+                ),
+                InlineKeyboardButton(
+                    text="❌ Отклонить",
+                    callback_data=f"reject_{message.from_user.id}"
+                )
+            ]
+        ])
 
         await bot.send_message(
             ADMIN_GROUP_ID,
-            "... данные заявки ...",
+            f"🔥 Новая бронь\n\n"
+            f"👤 @{message.from_user.username}\n"
+            f"🆔 ID: {message.from_user.id}\n"
+            f"📅 Дата: {day}.{month}.{year}\n"
+            f"👥 Персон: {persons}\n"
+            f"🎉 Тип: {event}\n"
+            f"📞 Телефон: {phone}",
             reply_markup=approve_keyboard
         )
 
         await message.answer("Заявка отправлена на рассмотрение ⏳")
 
-        del user_states[user_id]
+        del user_states[message.from_user.id]
 
 
 @dp.callback_query(F.data == "ignore")
 async def ignore(callback: CallbackQuery):
     await callback.answer()
 
+@dp.callback_query(F.data.startswith("approve_"))
+async def approve_handler(callback: CallbackQuery):
+    await callback.answer()
 
+    parts = callback.data.split("_")
+    day = int(parts[1])
+    month = int(parts[2])
+    year = int(parts[3])
+    user_id = int(parts[4])
+
+    # сохраняем бронь только после подтверждения
+    bookings[(year, month, day)]["approved"] = True
+
+    await bot.send_message(
+        user_id,
+        "✅ Заявка утверждена!\n\n"
+        "Для подробной информации свяжитесь с администратором."
+    )
+
+    await callback.message.edit_text(
+        callback.message.text + "\n\n✅ Подтверждено"
+    )
+
+    @dp.callback_query(F.data.startswith("reject_"))
+async def reject_handler(callback: CallbackQuery):
+    await callback.answer()
+
+    user_id = int(callback.data.split("_")[1])
+
+    await bot.send_message(
+        user_id,
+        "❌ Ваша заявка отклонена."
+    )
+
+    await callback.message.edit_text(
+        callback.message.text + "\n\n❌ Отклонено"
+    )
 # ================== ЗАПУСК ==================
 
 async def main():
