@@ -119,7 +119,7 @@ def generate_calendar(month, year, admin_mode=False):
             if key in bookings:
                 text = f"{day} ❌"
             elif key in manually_closed_days:
-                text = f"{day} 🔒"
+                text = f"{day} ❌"
             else:
                 text = f"{day} ✅"
 
@@ -341,20 +341,27 @@ async def admin_month(callback: CallbackQuery):
 @dp.callback_query(F.data.startswith("admin_day_"))
 async def admin_day(callback: CallbackQuery):
     await callback.answer()
-    _, _, day, month, year = callback.data.split("_")
-    key = (int(year), int(month), int(day))
+
+    parts = callback.data.split("_")
+
+    day = int(parts[2])
+    month = int(parts[3])
+    year = int(parts[4])
+
+    key = (year, month, day)
 
     if key in bookings:
         data = bookings[key]
         text = (
             f"📅 {day}.{month}.{year}\n\n"
-            f"👥 {data['persons']}\n"
-            f"🎉 {data['event']}\n"
-            f"📞 {data['phone']}"
+            f"👥 Персон: {data['persons']}\n"
+            f"🎉 Тип: {data['event']}\n"
+            f"📞 Телефон: {data['phone']}"
         )
-        
     else:
-        text = f"{day}.{month}.{year} свободен"
+        text = f"📅 {day}.{month}.{year}\n\n🟢 Свободен"
+
+    await callback.message.answer(text)
 
     close_keyboard = InlineKeyboardMarkup(inline_keyboard=[
         [
