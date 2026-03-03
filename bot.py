@@ -148,6 +148,17 @@ async def admin_handler(message: Message):
     if message.chat.id == ADMIN_GROUP_ID:
         await message.answer("⚙ Админ-меню:", reply_markup=admin_menu())
 
+from aiogram.filters import Command
+
+
+@dp.message(Command("test_reminder"))
+async def test_reminder(message: Message):
+    if message.chat.id != ADMIN_GROUP_ID:
+        await message.answer("Команда доступна только админу.")
+        return
+
+    await check_reminders()
+    await message.answer("🔔 Проверка напоминаний выполнена.")
 
 # ===================== БРОНЬ =====================
 
@@ -319,7 +330,7 @@ async def admin_calendar(callback: CallbackQuery):
 @dp.callback_query(F.data.startswith("admin_month_"))
 async def admin_month(callback: CallbackQuery):
     await callback.answer()
-    _, month, year = callback.data.split("_")
+    _, _, month, year = callback.data.split("_")
 
     await callback.message.answer(
         f"Календарь {russian_months[int(month)]}",
@@ -330,7 +341,7 @@ async def admin_month(callback: CallbackQuery):
 @dp.callback_query(F.data.startswith("admin_day_"))
 async def admin_day(callback: CallbackQuery):
     await callback.answer()
-    _, day, month, year = callback.data.split("_")
+    _, _, day, month, year = callback.data.split("_")
     key = (int(year), int(month), int(day))
 
     if key in bookings:
@@ -341,6 +352,7 @@ async def admin_day(callback: CallbackQuery):
             f"🎉 {data['event']}\n"
             f"📞 {data['phone']}"
         )
+        
     else:
         text = f"{day}.{month}.{year} свободен"
 
