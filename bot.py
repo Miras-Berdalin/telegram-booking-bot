@@ -12,7 +12,7 @@ from apscheduler.schedulers.asyncio import AsyncIOScheduler
 # ================== НАСТРОЙКИ ==================
 
 import os
-TOKEN = os.getenv("8715700469:AAEnKFSNxeVt9yg8Y0uQsDgehGWKzeXcu_U")
+TOKEN = os.getenv("TOKEN")
 ADMIN_GROUP_ID = -5155431438
 ADMIN_CHAT_LINK = "https://t.me/mbicko"
 
