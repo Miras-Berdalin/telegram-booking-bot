@@ -12,8 +12,38 @@ ADMIN_CHAT_LINK = "https://t.me/mbicko"
 bot = Bot(token=TOKEN)
 dp = Dispatcher()
 
+scheduler = AsyncIOScheduler()
+scheduler.start()
+
+async def check_reminders():
+    async with pool.acquire() as conn:
+        rows = await conn.fetch("""
+        SELECT * FROM bookings
+        WHERE approved = TRUE
+        AND reminder_sent = FALSE
+        AND event_date = CURRENT_DATE + INTERVAL '1 day'
+        """)
+
+        for row in rows:
+            await bot.send_message(
+                row["user_id"],
+                f"🔔 Напоминание!\n\nЗавтра ваше мероприятие 🎉"
+            )
+
+            await conn.execute("""
+            UPDATE bookings
+            SET reminder_sent = TRUE
+            WHERE id = $1
+            """, row["id"])
+
 # ================== ХРАНИЛИЩЕ ==================
 
+@dp.message(Command("test_reminder"))
+async def test_reminder(message: Message):
+    await check_reminders()
+    await message.answer("Проверка напоминаний запущена")
+    
+scheduler.add_job(check_reminders, "interval", hours=6)
 # {(year, month, day): {user_id, username, persons, phone, event}}
 bookings = {}
 
