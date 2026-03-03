@@ -211,7 +211,13 @@ async def handle_steps(message: Message):
             "phone": message.text
         }
 
-        await message.answer("✅ Заявка утверждена!")
+        await bot.send_message(
+            ADMIN_GROUP_ID,
+            "... данные заявки ...",
+            reply_markup=approve_keyboard
+        )
+
+        await message.answer("Заявка отправлена на рассмотрение ⏳")
 
         del user_states[user_id]
 
